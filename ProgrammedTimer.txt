@@ -1,0 +1,66 @@
+----------------------------------------------------------------------------------
+-- Company: University of Canterbury    
+-- Engineers: Kate Chamberlin and Jesse Baxter
+-- 
+-- Create Date: 20/03/2018
+-- Module Name: ProgrammedTimer
+-- Project Name: Timer FPGA
+-- Target Devices: FPGA
+-- Description: This is a programmable timer that fulfills the objectives
+--      of milestone 1 from the ENEL373 project.
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+
+entity ProgrammedTimer is
+    Port (CLK100MHZ, BTNC       : in STD_LOGIC;
+          JA                    : out STD_LOGIC_VECTOR(10 downto 1);
+          LED16_B, LED17_R      : out STD_LOGIC;
+          SW                    : in STD_LOGIC_VECTOR(15 downto 0);
+          LED                   : out STD_LOGIC_VECTOR(15 downto 0));
+end ProgrammedTimer;
+
+architecture Structural of ProgrammedTimer is
+    -- connecting signals
+    signal divider_to_counter   : std_logic;
+    signal register_out         : std_logic_vector(15 downto 0);
+    signal wave_out             : std_logic;
+    -- component instantiation
+    component LedFlash_5hz PORT(clk_in : in STD_LOGIC;
+                                led_out : out STD_LOGIC); 
+    end component;
+    component DownCounter_16bit PORT(clk_in : in STD_LOGIC;
+                                reset_val : in STD_LOGIC_VECTOR(15 downto 0);
+                                led_out : out STD_LOGIC);
+    end component;
+    component ClockDivider_100k PORT(clk_in : in  STD_LOGIC;
+                                clk_out : out  STD_LOGIC); 
+    end component;
+    component Register_16bit PORT(switches : in STD_LOGIC_VECTOR (15 downto 0);
+                                button : in STD_LOGIC;
+                                clk_in : in STD_LOGIC;
+                                reg_out : out STD_LOGIC_VECTOR (15 downto 0));
+    end component;
+begin
+    -- component placement
+    U1 : LedFlash_5hz PORT MAP(clk_in => CLK100MHZ, 
+                                led_out => LED16_B);
+    U2 : DownCounter_16bit PORT MAP(clk_in => divider_to_counter, 
+                                reset_val => register_out, 
+                                led_out => wave_out);
+    U3 : ClockDivider_100k PORT MAP(clk_in => CLK100MHZ,
+                                clk_out => divider_to_counter);
+    U4 : Register_16bit PORT MAP(switches => SW,
+                                button => BTNC,
+                                clk_in => CLK100MHZ,
+                                reg_out => register_out);
+    LED(15 downto 0) <= register_out;
+    LED17_R <= wave_out;
+    JA(1) <= wave_out;
+
+end Structural;
